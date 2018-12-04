@@ -8,15 +8,36 @@
 * This code was written in MULTIVALUE BASIC
 * Environment/Flavour = jBase
 *
-* TBD - Display Game Rules
+*
+CRT ' __ __ __ __ ____  ______      ______ __ __   ___ '
+CRT '|  |  |  |  |    \|      |    |      |  |  | /  _]'
+CRT '|  |  |  |  |  _  |      |    |      |  |  |/  [_ '
+CRT '|  _  |  |  |  |  |_|  |_|    |_|  |_|  _  |    _]'
+CRT "|  |  |  :  |  |  | |  |        |  | |  |  |   [_ "
+CRT '|  |  |     |  |  | |  |        |  | |  |  |     |'
+CRT '|__|__|\__,_|__|__| |__|        |__| |__|__|_____|'
+CRT
+CRT "  (`\ .-') /`          _   .-')     _ (`-.               .-')    "
+CRT "   `.( OO ),'         ( '.( OO )_  ( (OO  )             ( OO ).  "
+CRT ",--./  .--. ,--. ,--.  ,--.   ,--.).`     \,--. ,--.   (_)---\_) "
+CRT "|      |  | |  | |  |  |   `.'   (__...--''|  | |  |   /    _ |  "
+CRT "|  |   |  |,|  | | .-')|         ||  /  | ||  | | .-') \  :` `.  "
+CRT "|  |.'.|  |_)  |_|( OO )  |'.'|  ||  |_.' ||  |_|( OO ) '..`''.) "
+CRT "|         | |  | | `-' /  |   |  ||  .___.'|  | | `-' /.-._)   \ "
+CRT "|   ,'.   |('  '-'(_.-'|  |   |  ||  |    ('  '-'(_.-' \       / "
+CRT "'--'   '--'  `-----'   `--'   `--'`--'      `-----'     `-----'  "
+CRT
+CRT 'Objectives:'
+CRT '   - Shoot the Wumpus.'
+CRT '   - Watch out for bottomless pits.'
+*
+PROMPT ''
 GOSUB prompt.for.grid.size
 *
 GOSUB initialize.map
 *
-PROMPT ''
-CRT 'Peek?'
 INPUT YN
-IF  OCONV(YN,'MCU')='PLZ' THEN
+IF  OCONV(YN,'MCU')='SHOW' THEN
   TEST=1 ; * TBD - REMOVE
 END ELSE
   TEST = 0 ; * TBD - REMOVE
@@ -79,7 +100,7 @@ UNTIL WINNER DO
             * BATS
             PLAYER.MAP<HUNTER<1,1>,HUNTER<1,2>> = '.'
             PLAYER.MAP<MOVE.TO<1,1>,MOVE.TO<1,2>> = 'B'
-            CRT 'You have been picked and moved by SUPER BATS !!':
+            CRT 'You have been picked up and moved by SUPER BATS !!':
             INPUT NL
             GOSUB random.hunter.spawn
             * TBD - Carry to a random location
@@ -158,9 +179,10 @@ UNTIL WINNER DO
             PAINT.THIS.MAP = MAP
             GOSUB paint.map.on.screen
             *  * FOUND WUMPUS
+            CRT
             CRT "You murdered the WUMPUS! You are a HERO!"
             CRT "Our descendants shall sings songs of your bravery."
-            CRT @(-5):'Game Over..':@(-6)
+            CRT @(-5):'YOU WIN..game over..':@(-6)
             *
             WINNER = 1
             INPUT NL
