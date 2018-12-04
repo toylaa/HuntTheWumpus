@@ -1,0 +1,449 @@
+* Created by Tyler C McDonough-
+* Disclaimer: This game is an exercise in reverse engineering as opposed to an original game concept.
+*
+* Intended to implement a "simplified" version of the text-based dungeon crawl affectionately known as
+* HUNT THE WUMPUS - originally written by Gregory Yob in BASIC at Dartmouth in 1975
+*
+* Original game was written in BASIC.
+* This code was written in MULTIVALUE BASIC
+* Environment/Flavour = jBase
+*
+* TBD - Display Game Rules
+GOSUB prompt.for.grid.size
+*
+GOSUB initialize.map
+*
+PROMPT ''
+CRT 'Peek?'
+INPUT YN
+IF  OCONV(YN,'MCU')='PLZ' THEN
+  TEST=1 ; * TBD - REMOVE
+END ELSE
+  TEST = 0 ; * TBD - REMOVE
+END
+IF TEST THEN
+  DONE=0
+  LOOP
+  UNTIL DONE DO
+    PAINT.THIS.MAP = MAP
+    GOSUB paint.map.on.screen
+    CRT
+    CRT 'Continue? (<cr>=Y / N=Randomize)':
+    INPUT NY
+    IF OCONV(NY,'MCU') = 'N' THEN
+      * ALLOW ME TO TEST THE RANDOMNESS/MAP FORMAT
+      GOSUB prompt.for.grid.size
+      GOSUB initialize.map
+    END ELSE
+      DONE = 1
+    END
+  REPEAT
+END
+PAINT.THIS.MAP = PLAYER.MAP
+*
+*******************************
+*
+play.game:
+WINNER=0
+LOOP
+UNTIL WINNER DO
+  *
+  * Show USER their Hunter's current location
+  PAINT.THIS.MAP = PLAYER.MAP
+  GOSUB paint.map.on.screen
+  *
+  * Provide feedback based on map location relative to hazards/wumpus
+  GOSUB check.surroundings
+  *
+  *
+  * Prompt the user for an ACTION
+  CRT @(0,27):'Move or shoot ? (M/S/Q)':
+  INPUT ACTION,1
+  CRT @(0,27):@(-3)
+
+  *Test OUT OF BOUNDS - provide feedback, or allow
+  BEGIN CASE
+    CASE ACTION='M' ;* MOVE
+      *
+      CRT @(65,14):'MOVING'
+      GOSUB prompt.for.direction
+      *
+      * Handle interactions
+      *
+      * Provide feedback based on move
+      IF DIR.OK AND MOVE.TO # '' THEN
+        BEGIN CASE
+          CASE DEST.CK = ''
+            * Out Of Bounds
+          CASE DEST.CK = 'B'
+            * BATS
+            PLAYER.MAP<HUNTER<1,1>,HUNTER<1,2>> = '.'
+            PLAYER.MAP<MOVE.TO<1,1>,MOVE.TO<1,2>> = 'B'
+            CRT 'You have been picked and moved by SUPER BATS !!':
+            INPUT NL
+            GOSUB random.hunter.spawn
+            * TBD - Carry to a random location
+          CASE DEST.CK = 'P'
+            * PIT
+            *  wrap up
+            PAINT.THIS.MAP = MAP
+            GOSUB paint.map.on.screen
+            *
+            CRT "Oh no.. a bottomless PIT! You are now falling indefinitely."
+            CRT @(-5):'Game Over..':@(-6)
+            *INPUT NL
+            * Dead. Game over.
+
+            STOP
+            *
+          CASE DEST.CK = '#' OR DEST.CK = '.'
+            * Valid 'Move'
+            * Leave a trail of tested squares denoted by dots [.]
+            PLAYER.MAP<HUNTER<1,1>,HUNTER<1,2>> = '.'
+            MAP<HUNTER<1,1>,HUNTER<1,2>> = '.'
+            *
+            * Execute move
+            PLAYER.MAP<MOVE.TO<1,1>,MOVE.TO<1,2>> = @(-5):'H':@(-6)
+            MAP<MOVE.TO<1,1>,MOVE.TO<1,2>> = 'H'
+            * (Update hunter location)
+            HUNTER<1,1> = MOVE.TO<1,1>
+            HUNTER<1,2> = MOVE.TO<1,2>
+            *
+          CASE DEST.CK = 'W'
+            * wrap up.
+            PAINT.THIS.MAP = MAP
+            GOSUB paint.map.on.screen
+            *  * FOUND WUMPUS
+            CRT "You face-checked a WUMPUS lair! You are STUCK, forever at the mercy of his stink"
+            CRT @(-5):'Game Over..':@(-6)
+            *
+            STOP
+            *
+        END CASE
+        *
+      END
+      *
+    CASE ACTION='S' ;* SHOOT
+      *
+      CRT @(65,14):'SHOOTING'
+      GOSUB prompt.for.direction
+      *
+      * Handle interactions
+      *
+      * Provide feedback based on move
+      IF DIR.OK AND MOVE.TO # '' THEN
+        BEGIN CASE
+          CASE DEST.CK = ''
+            * Shooting walls
+            CRT 'PEW! Nothing happens.. This is a cave after all..'
+            INPUT NL
+            *
+          CASE DEST.CK = 'B'
+            * shooting BATS
+            CRT 'PEW! Nothing happens.. The rustling continues on as before. ':
+            INPUT NL
+            *
+          CASE DEST.CK = 'P'
+            * shooting PIT
+            CRT 'PEW! Nothing happens.. Your shot pings off into the abyss. '
+            INPUT NL
+            *
+          CASE DEST.CK = '#' OR DEST.CK = '.'
+            *
+            CRT 'Pew. Nothing happens.. '
+            INPUT NL
+            *
+          CASE DEST.CK = 'W'
+            * wrap up.
+            PAINT.THIS.MAP = MAP
+            GOSUB paint.map.on.screen
+            *  * FOUND WUMPUS
+            CRT "You murdered the WUMPUS! You are a HERO!"
+            CRT "Our descendants shall sings songs of your bravery."
+            CRT @(-5):'Game Over..':@(-6)
+            *
+            WINNER = 1
+            INPUT NL
+            *
+        END CASE
+        *
+      END
+      *
+    CASE ACTION='Q' ;* QUIT
+      STOP
+      *
+    CASE 1
+      *
+  END CASE
+  *
+  *
+  *
+REPEAT
+*
+*
+STOP;* Logical end of program
+*
+******************************
+***  Start of Subroutines  ***
+******************************
+*
+******************************
+*
+check.surroundings:
+*
+XCRD = HUNTER<1,1>
+YCRD = HUNTER<1,2>
+SURROUNDINGS = ''
+* CHECK EACH possible surrounding square
+*
+*
+IF YCRD # 0 THEN            ;* Make sure DECREASING the Y-coord will not go out of bounds
+  CK.UP = MAP<XCRD,YCRD-1>  ;* UP
+  CHECK.THIS = CK.UP
+
+  *
+  GOSUB check.for.hazards
+  *
+END ELSE
+  CK.UP = ''
+END
+*
+IF YCRD # MAP.SIZE THEN      ;* Make sure INCREASING the Y-coord will not go out of bounds
+  CK.DOWN = MAP<XCRD,YCRD+1> ;* DOWN
+  CHECK.THIS = CK.DOWN
+  GOSUB check.for.hazards
+END ELSE
+  CK.DOWN = ''
+END
+*
+IF XCRD # 0 THEN             ;* Make sure Decreasing the X-coord will not go out of bounds
+  CK.LEFT = MAP<XCRD-1,YCRD> ;* LEFT
+  CHECK.THIS = CK.LEFT
+  GOSUB check.for.hazards
+END ELSE
+  CK.LEFT = ''
+END
+*
+IF XCRD # MAP.SIZE THEN        ;* Make sure increasing the X-coord will not go out of bounds
+  CK.RIGHT = MAP<XCRD+1,YCRD>  ;* RIGHT
+  CHECK.THIS = CK.RIGHT
+  GOSUB check.for.hazards
+END ELSE
+  CK.RIGHT = ''
+END
+
+*
+*
+RETURN
+*
+*
+*******************************
+check.for.hazards:
+
+
+BEGIN CASE
+  CASE CHECK.THIS = 'B'
+    SURROUNDINGS<1> = '- You hear a creepy rustling .... '
+    CRT SURROUNDINGS<1>
+    *
+  CASE CHECK.THIS = 'P'
+    SURROUNDINGS<2> = '- You feel a cold wind blowing from a nearby cavern.'
+    CRT SURROUNDINGS<2>
+    *
+  CASE CHECK.THIS = 'W'
+    SURROUNDINGS<3> = '- You smell something TERRIBLE nearby.'
+    CRT SURROUNDINGS<3>
+    *
+  CASE 1
+    * # - Do Nothing ?
+END CASE
+
+
+*
+*
+RETURN
+*
+*
+*******************************
+*
+initialize.map:
+MAP=''
+*Initialize Empty map (with #'s)
+FOR Y.CNT=1 TO MAP.SIZE
+  FOR X.CNT=1 TO MAP.SIZE
+    MAP<Y.CNT,X.CNT> = '#'
+  NEXT X.CNT
+NEXT Y.CNT
+*
+PLAYER.MAP = MAP ;* INITIALIZE PLAYER.MAP to blank
+*
+*Initialize Randomized "Hazards"
+FOR H.CNT=1 TO NUM.HAZARDS
+  BSET=0;PSET=0
+  *
+  LOOP
+    * Find an empty room to place BATS
+  UNTIL BSET = 1 DO
+    BX.LOC = RND(MAP.SIZE)+1
+    BY.LOC = RND(MAP.SIZE)+1
+    IF MAP<BX.LOC,BY.LOC> = '#' THEN
+      * Place BATS
+      MAP<BX.LOC,BY.LOC> = "B"
+      BSET = 1
+    END
+  REPEAT
+  *
+  LOOP
+    * Find an empty room to place a PIT
+  UNTIL PSET = 1 DO
+    PX.LOC = RND(MAP.SIZE)+1
+    PY.LOC = RND(MAP.SIZE)+1
+    IF MAP<PX.LOC,PY.LOC> = '#' THEN
+      * Place PIT
+      MAP<PX.LOC,PY.LOC> = "P"
+      PSET = 1
+    END
+  REPEAT
+NEXT H.CNT
+*
+WSET = 0
+LOOP
+  * Find an empty room to place WUMPUS
+UNTIL WSET = 1 DO
+  WX.LOC = RND(MAP.SIZE)+1
+  WY.LOC = RND(MAP.SIZE)+1
+  IF MAP<WX.LOC,WY.LOC> = '#' THEN
+    * Place WUMPUS
+    MAP<WX.LOC,WY.LOC> = "W"
+    WSET = 1
+  END
+REPEAT
+*
+GOSUB random.hunter.spawn
+*
+RETURN
+*
+*
+******************************
+prompt.for.grid.size:
+*
+OKAY=0
+LOOP
+WHILE NOT(OKAY) DO
+  CRT
+  CRT 'How large a grid would you like to hunt?':
+  INPUT MAP.SIZE
+  IF MAP.SIZE<=20 AND MAP.SIZE>0 THEN
+    OKAY=1
+  END ELSE
+    CRT 'Warning! You can not hunt a grid larger than 20!'
+  END
+REPEAT
+*
+NUM.HAZARDS = INT(MAP.SIZE+1/2) ;*          *  SET # HAZARDSF
+*
+RETURN
+*
+*
+******************************
+prompt.for.direction:
+*
+* Prompt the user for a DIRECTION
+*
+CRT @(65,15):@(-15):'Directions':@(-16)
+CRT @(65,16):'"W" = UP '
+CRT @(65,17):'"A" = LEFT'
+CRT @(65,18):'"S" = DOWN'
+CRT @(65,19):'"D" = RIGHT'
+*
+DIR.OK = 0
+LOOP
+UNTIL DIR.OK DO
+  CRT @(65,20):'>':
+  INPUT MOVE.DIR,1
+  *
+  MOVE.TO = ''
+  BEGIN CASE
+      *
+    CASE MOVE.DIR = 'W'
+      DIR.OK = 1
+      DEST.CK = CK.UP
+      *
+      MOVE.TO<1,1> = XCRD
+      MOVE.TO<1,2> = YCRD-1
+      *
+    CASE MOVE.DIR = 'A'
+      DIR.OK = 1
+      DEST.CK = CK.LEFT
+      *
+      MOVE.TO<1,1> = XCRD-1
+      MOVE.TO<1,2> = YCRD
+      *
+    CASE MOVE.DIR = 'S'
+      DIR.OK = 1
+      DEST.CK = CK.DOWN
+      *
+      MOVE.TO<1,1> = XCRD
+      MOVE.TO<1,2> = YCRD+1
+      *
+    CASE MOVE.DIR = 'D'
+      DIR.OK = 1
+      DEST.CK = CK.RIGHT
+      *
+      MOVE.TO<1,1> = XCRD+1
+      MOVE.TO<1,2> = YCRD
+      *
+    CASE 1
+      DIR.OK = 0
+  END CASE
+REPEAT
+*
+RETURN
+*
+*
+******************************
+paint.map.on.screen:
+
+* SET PAINT.THIS.MAP first
+
+THIS.MAP = PAINT.THIS.MAP
+*
+CRT @(-1):
+FOR YCNT=1 TO MAP.SIZE
+  COL = 1
+  FOR XCNT=1 TO MAP.SIZE
+    CRT @(COL,YCNT):THIS.MAP<XCNT,YCNT>
+    COL+=3
+  NEXT XCNT
+NEXT YCNT
+*
+*
+RETURN
+*
+*
+random.hunter.spawn:
+HSET = 0
+LOOP
+  * Find an empty room to place HUNTER
+UNTIL HSET = 1 DO
+  HX.LOC = RND(MAP.SIZE)+1
+  HY.LOC = RND(MAP.SIZE)+1
+  IF MAP<HX.LOC,HY.LOC> = '#' THEN
+    * Place HUNTER
+    MAP        <HX.LOC,HY.LOC>= "H"
+    PLAYER.MAP <HX.LOC,HY.LOC>= @(-5):"H":@(-6)
+    *
+    HSET = 1
+    HUNTER =''
+    HUNTER<1,1> = HX.LOC                ;* HUNTER<1,1> = Hunter's current X-coord
+    HUNTER<1,2> = HY.LOC                ;* HUNTER<1,2> = Hunter's current Y-coord
+    * HUNTER<1> = X-coordY-coord
+  END
+REPEAT
+*
+RETURN
+*
+*
+**********************************************************************************
+STOP
+*
