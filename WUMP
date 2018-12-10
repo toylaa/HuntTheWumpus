@@ -1,21 +1,20 @@
 * Created by Tyler C McDonough-
-* Disclaimer: This game is an exercise in reverse engineering as opposed to an original game concept.
 *
 * Intended to implement a "simplified" version of the text-based dungeon crawl affectionately known as
 * HUNT THE WUMPUS - originally written by Gregory Yob in BASIC at Dartmouth in 1975
 *
-* Original game was written in BASIC.
-* This code was written in MULTIVALUE BASIC
-* Environment/Flavour = jBase
+* Original game was written in "BASIC".
+* This code was written in MULTIVALUE BASIC FOR jBASE
 *
 *
-CRT ' __ __ __ __ ____  ______      ______ __ __   ___ '
-CRT '|  |  |  |  |    \|      |    |      |  |  | /  _]'
-CRT '|  |  |  |  |  _  |      |    |      |  |  |/  [_ '
-CRT '|  _  |  |  |  |  |_|  |_|    |_|  |_|  _  |    _]'
-CRT "|  |  |  :  |  |  | |  |        |  | |  |  |   [_ "
-CRT '|  |  |     |  |  | |  |        |  | |  |  |     |'
-CRT '|__|__|\__,_|__|__| |__|        |__| |__|__|_____|'
+*
+CRT '       __ __ __ __ ____  ______      ______ __ __   ___ '
+CRT '      |  |  |  |  |    \|      |    |      |  |  | /  _]'
+CRT '      |  |  |  |  |  _  |      |    |      |  |  |/  [_ '
+CRT '      |  _  |  |  |  |  |_|  |_|    |_|  |_|  _  |    _]'
+CRT "      |  |  |  :  |  |  | |  |        |  | |  |  |   [_ "
+CRT '      |  |  |     |  |  | |  |        |  | |  |  |     |'
+CRT '      |__|__|\__,_|__|__| |__|        |__| |__|__|_____|'
 CRT
 CRT "  (`\ .-') /`          _   .-')     _ (`-.               .-')    "
 CRT "   `.( OO ),'         ( '.( OO )_  ( (OO  )             ( OO ).  "
@@ -28,8 +27,8 @@ CRT "|   ,'.   |('  '-'(_.-'|  |   |  ||  |    ('  '-'(_.-' \       / "
 CRT "'--'   '--'  `-----'   `--'   `--'`--'      `-----'     `-----'  "
 CRT
 CRT 'Objectives:'
-CRT '   - Shoot the Wumpus.'
-CRT '   - Watch out for bottomless pits.'
+CRT '   - Hunt the Wumpus.'
+CRT '   - Watch out for hazards.'
 *
 PROMPT ''
 GOSUB prompt.for.grid.size
@@ -136,7 +135,7 @@ UNTIL WINNER DO
             GOSUB paint.map.on.screen
             *  * FOUND WUMPUS
             CRT "You face-checked a WUMPUS lair! You are STUCK, forever at the mercy of his stink"
-            CRT @(-5):'Game Over..':@(-6)
+            CRT @(-5):'YOU LOSE.. Game Over..':@(-6)
             *
             STOP
             *
@@ -154,25 +153,6 @@ UNTIL WINNER DO
       * Provide feedback based on move
       IF DIR.OK AND MOVE.TO # '' THEN
         BEGIN CASE
-          CASE DEST.CK = ''
-            * Shooting walls
-            CRT 'PEW! Nothing happens.. This is a cave after all..'
-            INPUT NL
-            *
-          CASE DEST.CK = 'B'
-            * shooting BATS
-            CRT 'PEW! Nothing happens.. The rustling continues on as before. ':
-            INPUT NL
-            *
-          CASE DEST.CK = 'P'
-            * shooting PIT
-            CRT 'PEW! Nothing happens.. Your shot pings off into the abyss. '
-            INPUT NL
-            *
-          CASE DEST.CK = '#' OR DEST.CK = '.'
-            *
-            CRT 'Pew. Nothing happens.. '
-            INPUT NL
             *
           CASE DEST.CK = 'W'
             * wrap up.
@@ -182,10 +162,19 @@ UNTIL WINNER DO
             CRT
             CRT "You murdered the WUMPUS! You are a HERO!"
             CRT "Our descendants shall sings songs of your bravery."
-            CRT @(-5):'YOU WIN..game over..':@(-6)
+            CRT @(-5):'YOU WIN.. Game Over..':@(-6)
             *
             WINNER = 1
             INPUT NL
+            *
+          CASE 1
+            *
+            CRT 'PEW! **Nothing happens**.. '
+            CRT 'uH Oh! You have disturbed the wumpus..'
+            *
+            GOSUB random.wumpus.spawn
+            INPUT NL
+            *
             *
         END CASE
         *
@@ -222,10 +211,7 @@ SURROUNDINGS = ''
 IF YCRD # 0 THEN            ;* Make sure DECREASING the Y-coord will not go out of bounds
   CK.UP = MAP<XCRD,YCRD-1>  ;* UP
   CHECK.THIS = CK.UP
-
-  *
   GOSUB check.for.hazards
-  *
 END ELSE
   CK.UP = ''
 END
@@ -253,16 +239,13 @@ IF XCRD # MAP.SIZE THEN        ;* Make sure increasing the X-coord will not go o
 END ELSE
   CK.RIGHT = ''
 END
-
-*
 *
 RETURN
 *
 *
 *******************************
 check.for.hazards:
-
-
+*
 BEGIN CASE
   CASE CHECK.THIS = 'B'
     SURROUNDINGS<1> = '- You hear a creepy rustling .... '
@@ -279,8 +262,6 @@ BEGIN CASE
   CASE 1
     * # - Do Nothing ?
 END CASE
-
-
 *
 *
 RETURN
@@ -328,18 +309,7 @@ FOR H.CNT=1 TO NUM.HAZARDS
   REPEAT
 NEXT H.CNT
 *
-WSET = 0
-LOOP
-  * Find an empty room to place WUMPUS
-UNTIL WSET = 1 DO
-  WX.LOC = RND(MAP.SIZE)+1
-  WY.LOC = RND(MAP.SIZE)+1
-  IF MAP<WX.LOC,WY.LOC> = '#' THEN
-    * Place WUMPUS
-    MAP<WX.LOC,WY.LOC> = "W"
-    WSET = 1
-  END
-REPEAT
+GOSUB random.wumpus.spawn
 *
 GOSUB random.hunter.spawn
 *
@@ -443,6 +413,39 @@ NEXT YCNT
 RETURN
 *
 *
+******************************
+random.wumpus.spawn:
+*
+WSET = 0
+LOOP
+  * Find an empty room to place WUMPUS
+UNTIL WSET = 1 DO
+  WX.LOC = RND(MAP.SIZE)+1
+  WY.LOC = RND(MAP.SIZE)+1
+  IF MAP<WX.LOC,WY.LOC> = '#' OR  MAP<WX.LOC,WY.LOC> = '.' THEN
+    * Place WUMPUS
+    MAP<WX.LOC,WY.LOC> = "W"
+    WSET = 1
+  END ELSE
+    *
+    IF MAP<WX.LOC,WY.LOC> = 'H' THEN
+      * EAT HUNTER
+      MAP<WX.LOC,WY.LOC> = "W"
+      PLAYER.MAP<WX.LOC,WY.LOC> = @(-5):"W":@(-6)
+      WSET = 1
+      *
+      CRT "The WUMPUS he has found you. You are STUCK, forever at the mercy of his stink"
+      CRT @(-5):'YOU LOSE.. Game Over..':@(-6)
+    END
+    *
+  END
+  *
+REPEAT
+*
+RETURN
+*
+*
+******************************
 random.hunter.spawn:
 HSET = 0
 LOOP
