@@ -1,10 +1,10 @@
-* Created by Tyler C McDonough-
+*Written By: Tyler McDonough
 *
 * Intended to implement a "simplified" version of the text-based dungeon crawl affectionately known as
 * HUNT THE WUMPUS - originally written by Gregory Yob in BASIC at Dartmouth in 1975
 *
 * Original game was written in "BASIC".
-* This code was written in MULTIVALUE BASIC FOR jBASE
+* This code was written for MULTIVALUE BASIC FOR jBASE
 *
 *
 *
@@ -35,6 +35,7 @@ GOSUB prompt.for.grid.size
 *
 GOSUB initialize.map
 *
+CRT 'Ready?':
 INPUT YN
 IF  OCONV(YN,'MCU')='SHOW' THEN
   TEST=1 ; * TBD - REMOVE
@@ -77,15 +78,20 @@ UNTIL WINNER DO
   *
   *
   * Prompt the user for an ACTION
-  CRT @(0,27):'Move or shoot ? (M/S/Q)':
-  INPUT ACTION,1
-  CRT @(0,27):@(-3)
+  * CRT @(0,28):'Move or shoot ? (M/S/Q)':;INPUT ACTION,1
 
+  CRT @(63,20):@(-15):'Move or shoot?':@(-16):
+  CRT @(65,21):'"M" = MOVE '
+  CRT @(65,22):'"S" = SHOOT '
+  CRT @(65,23):'"Q" = QUIT '
+  CRT @(65,24):'>':; INPUT ACTION,1
+  *
+  *
   *Test OUT OF BOUNDS - provide feedback, or allow
   BEGIN CASE
     CASE ACTION='M' ;* MOVE
       *
-      CRT @(65,14):'MOVING'
+      *CRT @(65,12):'MOVING'
       GOSUB prompt.for.direction
       *
       * Handle interactions
@@ -99,17 +105,17 @@ UNTIL WINNER DO
             * BATS
             PLAYER.MAP<HUNTER<1,1>,HUNTER<1,2>> = '.'
             PLAYER.MAP<MOVE.TO<1,1>,MOVE.TO<1,2>> = 'B'
-            CRT 'You have been picked up and moved by SUPER BATS !!':
+            CRT @(0,MAP.SIZE+1):'You have been picked up and moved by SUPER BATS !!':
             INPUT NL
             GOSUB random.hunter.spawn
-            * TBD - Carry to a random location
+            *
           CASE DEST.CK = 'P'
             * PIT
             *  wrap up
             PAINT.THIS.MAP = MAP
             GOSUB paint.map.on.screen
             *
-            CRT "Oh no.. a bottomless PIT! You are now falling indefinitely."
+            CRT @(0,MAP.SIZE+1):"Oh no.. a bottomless PIT! You are now falling indefinitely."
             CRT @(-5):'Game Over..':@(-6)
             *INPUT NL
             * Dead. Game over.
@@ -134,7 +140,7 @@ UNTIL WINNER DO
             PAINT.THIS.MAP = MAP
             GOSUB paint.map.on.screen
             *  * FOUND WUMPUS
-            CRT "You face-checked a WUMPUS lair! You are STUCK, forever at the mercy of his stink"
+            CRT @(0,MAP.SIZE+1):"You face-checked a WUMPUS lair! You are STUCK, forever at the mercy of his stink"
             CRT @(-5):'YOU LOSE.. Game Over..':@(-6)
             *
             STOP
@@ -145,7 +151,7 @@ UNTIL WINNER DO
       *
     CASE ACTION='S' ;* SHOOT
       *
-      CRT @(65,14):'SHOOTING'
+      *CRT @(65,12):'SHOOTING'
       GOSUB prompt.for.direction
       *
       * Handle interactions
@@ -160,7 +166,7 @@ UNTIL WINNER DO
             GOSUB paint.map.on.screen
             *  * FOUND WUMPUS
             CRT
-            CRT "You murdered the WUMPUS! You are a HERO!"
+            CRT @(0,MAP.SIZE+1):"You murdered the WUMPUS! You are a HERO!"
             CRT "Our descendants shall sings songs of your bravery."
             CRT @(-5):'YOU WIN.. Game Over..':@(-6)
             *
@@ -169,7 +175,7 @@ UNTIL WINNER DO
             *
           CASE 1
             *
-            CRT 'PEW! **Nothing happens**.. '
+            CRT @(0,MAP.SIZE+1):'PEW! **Nothing happens**.. '
             CRT 'uH Oh! You have disturbed the wumpus..'
             *
             GOSUB random.wumpus.spawn
@@ -332,7 +338,7 @@ WHILE NOT(OKAY) DO
   END
 REPEAT
 *
-NUM.HAZARDS = INT(MAP.SIZE+1/2) ;*          *  SET # HAZARDSF
+NUM.HAZARDS = INT(MAP.SIZE+1/3) ;*          *  SET # HAZARDS
 *
 RETURN
 *
@@ -342,16 +348,23 @@ prompt.for.direction:
 *
 * Prompt the user for a DIRECTION
 *
-CRT @(65,15):@(-15):'Directions':@(-16)
-CRT @(65,16):'"W" = UP '
-CRT @(65,17):'"A" = LEFT'
-CRT @(65,18):'"S" = DOWN'
-CRT @(65,19):'"D" = RIGHT'
+GOSUB paint.map.on.screen
+*
+CRT @(65,19):@(-15):'Direction?':@(-16)
+CRT @(65,20):'"W" = UP '
+CRT @(65,21):'"A" = LEFT'
+CRT @(65,22):'"S" = DOWN'
+CRT @(65,23):'"D" = RIGHT'
+CRT @(65,24):'>':
+*
+*CRT @(0,28):'Direction ? ("W" = UP, "A" = LEFT, "S" = DOWN, "D" = RIGHT)':
+*
+
 *
 DIR.OK = 0
 LOOP
 UNTIL DIR.OK DO
-  CRT @(65,20):'>':
+  * CRT @(65,19):'>':;
   INPUT MOVE.DIR,1
   *
   MOVE.TO = ''
@@ -434,7 +447,7 @@ UNTIL WSET = 1 DO
       PLAYER.MAP<WX.LOC,WY.LOC> = @(-5):"W":@(-6)
       WSET = 1
       *
-      CRT "The WUMPUS he has found you. You are STUCK, forever at the mercy of his stink"
+      CRT @(0,MAP.SIZE+1):"The WUMPUS has found you. You are STUCK, forever at the mercy of his stink"
       CRT @(-5):'YOU LOSE.. Game Over..':@(-6)
     END
     *
